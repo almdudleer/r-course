@@ -26,17 +26,34 @@ You can read about this method in any resource.
 For examplle: [www.mathonweb.com/entrtain/monte/t_monte.html](https://www.mathonweb.com/entrtain/monte/t_monte.html)
 
 This is a graphical representation of the equations:
+```{r}
+x_min <- -pi/2
+x_max <- pi/2
+y_min <- -3.5
+y_max <- 1.5
+```
 
 ```{r fig.align="center", echo = FALSE,fig.width = 14,fig.height=10}
-X <- seq(from=-pi/2, to=pi/2, length.out=100)
+X <- seq(from=x_min, to=x_max, length.out=100)
 Y <- 2*abs(X) - pi
 Y <- c(Y, abs(sin(2*X)))
 X <- c(X, X)
 qplot(X, Y)
 ```
+```{r}
+n_points <- 100000
+X_mc <- runif(n_points, x_min, x_max)
+Y_mc <- runif(n_points, y_min, y_max)
+```
 
-To generate random dots you may use **runif** function,
+```{r}
+in_figure <- (Y_mc < abs(sin(2*X_mc))) & (Y_mc > (2*abs(X_mc) - pi))
+proportion <- sum(in_figure) / n_points
+area <- proportion * (x_max - x_min) * (y_max - y_min)
+area
+```
 
-Use help function "?runif" to understand how it works.
-
+```{r}
+ggplot() + geom_point(aes(X_mc, Y_mc, colour=in_figure)) + geom_point(aes(X, Y))
+```
 
