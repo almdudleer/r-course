@@ -1,0 +1,108 @@
+---
+title: "HW2 implementation"
+author: "Alexey Serdyukov"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+deck <- read.csv("deck.csv")
+head(deck)
+```
+
+## Game functions
+Start game function, initializes the game
+```{r}
+start_game <- function() {
+  game_state <- list(
+    deck = shuffle_deck(),
+    dealer_hand = c(),
+    player_hand = c()
+  )
+  game_state <- deal(game_state, 2, "dealer_hand", FALSE)
+  game_state <- deal(game_state, 2, "player_hand")
+  cat("----- GAME START -----\t")
+  game_state
+}
+```
+
+Let's enumerate all cards in the deck and consider only their ordinal numbers afterwards
+```{r}
+shuffle_deck <- function() {
+  sample(rep(1:52, 4))
+}
+
+deal <- function(game_state, n, hand, print = TRUE) {
+  game_state[[hand]] <- c(game_state[[hand]], game_state$deck[(length(game_state$deck) - n + 1):length(game_state$deck)])
+  game_state$deck <- game_state$deck[1:(length(game_state$deck) - n)]
+  if (print) {
+    print_state(game_state)
+  }
+  game_state
+}
+
+print_state <- function(game_state) {
+  cat("Dealer:\n")
+  dh <- deck[game_state$dealer_hand, ]
+  colnames(dh) <- NULL
+  print(dh, row.names = FALSE)
+  dealer_sum <- sum(deck[game_state$dealer_hand, "value"])
+  print(glue::glue("Dealer sum: {dealer_sum}"))
+  
+  cat("You:\n")
+  ph <- deck[game_state$player_hand, ]
+  colnames(ph) <- NULL
+  print(ph, row.names = FALSE)
+  player_sum <- sum(deck[game_state$player_hand, "value"])
+  print(glue::glue("Your sum: {player_sum}"))
+  
+  chance <- chance_to_win(game_state)
+  print(glue::glue("Chance to win: {chance}%"))
+}
+```
+
+Stop game function, stops the game
+```{r}
+stop_game <- function(game_state) {
+  player_sum <- sum(deck[game_state$player_hand, "value"])
+  dealer_sum <- sum(deck[game_state$dealer_hand, "value"])
+  if (player_sum > 21 || player_sum < dealer_sum) {
+    print(glue::glue("You lost, dealer: {dealer_sum}, you: {player_sum}"))
+  } else {
+    print(glue::glue("You won, dealer: {dealer_sum}, you: {player_sum}"))
+  }
+}
+```
+
+Calculate chances to win
+```{r}
+chance_to_win <- function(game_state) {
+  player_sum <- sum(deck[game_state$player_hand, "value"])
+
+  if (player_sum > 21) {
+    return(0)
+  }
+  
+  rest_deck <- c(game_state$deck, game_state$dealer_hand)
+  outer_sum <- outer(deck[rest_deck, "value"], deck[rest_deck, "value"], "+")
+  chance = sum(outer_sum <= player_sum) / length(outer_sum) * 100
+  return(round(chance, digits = 2))
+}
+```
+
+## Example 1
+```{r}
+game_state <- start_game()
+game_state <- deal(game_state, 1, "player_hand")
+game_state <- deal(game_state, 1, "player_hand")
+stop_game(game_state)
+```
+
+## Example 2
+```{r}
+game_state <- start_game()
+game_state <- deal(game_state, 1, "player_hand")
+stop_game(game_state)
+```
+
